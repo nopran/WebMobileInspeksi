@@ -128,8 +128,8 @@ label.f{display:block;margin:16px 0 6px;font-weight:600;font-size:15px}
    Isi dua nilai ini dari: Supabase Dashboard > Project Settings > API
    Dibiarkan kosong = MODE DEMO (data contoh di memori, tidak tersimpan).
    ===================================================================== */
-const SUPABASE_URL = 'https://guiuirezshnyjplvqjjs.supabase.co/rest/v1/';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1aXVpcmV6c2hueWpwbHZxampzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MjE4MTQsImV4cCI6MjEwNzI5NzgxNH0.earLr2yc74kWlwa5TKHF17zrgKkjL1fyVKqaq0B4a54';
+const SUPABASE_URL = 'https://vllsjrnhhbnkkszwdnir.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsbHNqcm5oaGJua2tzendkbmlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3MjQxNTEsImV4cCI6MjEwNzMwMDE1MX0.nyIrlnF1mMidgxFNuK1LpSwBWFadAS2gf4Z6RVnBLxE';
 
 const DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase;
 const sb = DEMO ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
