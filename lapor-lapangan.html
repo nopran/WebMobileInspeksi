@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10222F">
+<title>Lapor Lapangan - Lifting Gear</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --ink:#10222F; --ink2:#44586A; --paper:#EDF0EE; --card:#fff; --line:#D3DBD8;
+  --signal:#F2B51D; --ok:#1E7A4B; --warn:#A86400; --bad:#B3261E; --info:#1E5A8A;
+  --font:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --fc:'Barlow Semi Condensed','Barlow',system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#cfd6d3;color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.4}
+#app{max-width:560px;margin:0 auto;min-height:100dvh;background:var(--paper);position:relative;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3{font-family:var(--fc);margin:0;font-weight:700;letter-spacing:.2px}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{width:100%;min-height:50px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fff;font-size:16px}
+textarea{min-height:96px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid var(--signal);outline-offset:1px}
+label.f{display:block;margin:16px 0 6px;font-weight:600;font-size:15px}
+.hint{color:var(--ink2);font-size:14px;margin:6px 0 0}
+
+/* app bar */
+.bar{position:sticky;top:0;z-index:10;background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;display:flex;align-items:center;gap:8px}
+.bar h1{font-size:20px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ibtn{background:transparent;border:0;color:#fff;min-width:44px;min-height:44px;border-radius:10px;font-weight:600;cursor:pointer;font-size:15px}
+.ibtn:active{background:rgba(255,255,255,.14)}
+.steps{display:flex;gap:4px;padding:0 12px 10px;background:var(--ink);position:sticky;top:calc(64px + env(safe-area-inset-top,0px));z-index:9}
+.steps button{flex:1;border:0;background:#2C4152;color:#B9C6CF;height:34px;border-radius:8px;font-family:var(--fc);font-weight:600;font-size:13px;cursor:pointer;padding:0 2px}
+.steps button.on{background:var(--signal);color:var(--ink)}
+.steps button.done{background:#3D5A70;color:#fff}
+
+.pad{padding:16px 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:10px;align-items:center}
+.grow{flex:1;min-width:0}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:14px;border:2px solid var(--ink);background:#fff;font-weight:600;font-size:17px;cursor:pointer;padding:0 16px}
+.btn.primary{background:var(--signal);border-color:var(--signal);color:var(--ink);font-weight:700}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.sm{min-height:44px;font-size:15px;border-width:1.5px;border-radius:12px}
+.btn:disabled{opacity:.5}
+.btn:active{transform:translateY(1px)}
+.dock{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:560px;background:#fff;border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;z-index:12}
+.dock .btn{flex:1}
+.dock .btn.back{flex:0 0 38%}
+
+/* segmented */
+.seg{display:grid;gap:6px}
+.seg.c3{grid-template-columns:repeat(3,1fr)}
+.seg.c2{grid-template-columns:repeat(2,1fr)}
+.seg button{min-height:48px;border:1.5px solid var(--line);background:#fff;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer;padding:4px 6px}
+.seg button.on.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.seg button.on.warn{background:#F7DDA6;border-color:var(--warn);color:#4D2F00}
+.seg button.on.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.seg button.on.neutral{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:13px;font-weight:600;background:#E3E8E6;color:var(--ink2)}
+.badge.Draft{background:#E3E8E6}
+.badge.Submitted{background:#D6E7F5;color:#12466F}
+.badge.Returned{background:#F7DDA6;color:#4D2F00}
+.badge.Approved{background:#CDEBDA;color:#14573A}
+
+/* identity plate: the memorable element */
+.plate{position:relative;display:flex;background:#F7F8F6;border:2px solid var(--ink);border-radius:10px;overflow:hidden;margin-bottom:10px;width:100%;text-align:left;cursor:pointer}
+.plate::before,.plate::after{content:"";position:absolute;right:9px;width:7px;height:7px;border-radius:50%;background:#9AA7AF;box-shadow:inset 0 0 0 1.5px #6c7b85}
+.plate::before{top:8px}.plate::after{bottom:8px}
+.plate .stripe{width:16px;background:var(--cc,#9AA7AF);flex:none;border-right:2px solid var(--ink)}
+.plate .body{padding:10px 30px 10px 12px;flex:1;min-width:0}
+.plate .no{font-family:var(--fc);font-weight:700;font-size:28px;line-height:1;letter-spacing:1px}
+.plate .nm{font-weight:600;margin-top:2px}
+.plate .meta{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font-size:14px;color:var(--ink2)}
+.plate .cc{margin-top:6px;font-size:13px;font-weight:600}
+.plate.sel{box-shadow:0 0 0 4px var(--signal)}
+.plate .tick{position:absolute;top:8px;right:22px;font-weight:700;color:var(--ok);font-size:20px;display:none}
+.plate.sel .tick{display:block}
+.plate.static{cursor:default;margin-bottom:12px}
+
+/* checklist */
+.chk{padding:12px 0;border-top:1px solid var(--line)}
+.chk:first-of-type{border-top:0}
+.chk .t{font-weight:600;margin-bottom:8px}
+.chk input{margin-top:8px}
+
+/* photos */
+.photos{display:grid;grid-template-columns:1fr;gap:12px}
+.ph{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ph img{display:block;width:100%;height:210px;object-fit:cover;background:#ddd}
+.ph .in{padding:10px;display:grid;gap:8px}
+.addph{display:flex;align-items:center;justify-content:center;min-height:64px;border:2px dashed var(--ink);border-radius:14px;font-weight:700;font-size:17px;background:#fff;cursor:pointer}
+
+.filters{display:flex;gap:8px;overflow-x:auto;padding:2px 14px 10px;scrollbar-width:none}
+.filters button{flex:none;min-height:40px;padding:0 14px;border-radius:99px;border:1.5px solid var(--line);background:#fff;font-weight:600;cursor:pointer}
+.filters button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rep{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 14px 10px;width:calc(100% - 28px);cursor:pointer}
+.rep .no{font-family:var(--fc);font-weight:700;font-size:20px}
+.rep .sub{color:var(--ink2);font-size:14px;margin-top:4px}
+.rep .note{margin-top:8px;padding:8px 10px;background:#FBF0D3;border-radius:8px;font-size:14px}
+
+.hero{background:var(--ink);color:#fff;padding:calc(18px + env(safe-area-inset-top,0px)) 16px 22px}
+.hero h1{font-size:30px;line-height:1.05}
+.hero p{margin:6px 0 0;color:#B9C6CF}
+.err{background:#FADBD8;color:#6E1610;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:15px}
+.warnbox{background:#FBF0D3;color:#4D2F00;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:15px}
+.okbox{background:#CDEBDA;color:#14573A;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:15px}
+.err ul{margin:4px 0 0;padding-left:20px}
+.toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;z-index:30;max-width:90%;font-weight:600}
+.empty{padding:36px 24px;text-align:center;color:var(--ink2)}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;font-size:15px}
+.kv dt{color:var(--ink2)}.kv dd{margin:0;font-weight:500}
+.loading{padding:60px 20px;text-align:center;color:var(--ink2)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">Memuat…</div></div>
+
+<script>
+/* =====================================================================
+   KONFIGURASI SUPABASE
+   Isi dua nilai ini dari: Supabase Dashboard > Project Settings > API
+   Dibiarkan kosong = MODE DEMO (data contoh di memori, tidak tersimpan).
+   ===================================================================== */
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
+
+const DEMO = !SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase;
+const sb = DEMO ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- konstanta domain ---------- */
+const WORK_TYPES = ['Inspeksi', 'Maintenance', 'Perpindahan Lokasi'];
+const CHECKLIST = ['Kondisi rangka / struktur', 'Pad eye', 'Shackle', 'Sling', 'Master link', 'Couple link', 'Pin, baut dan pengunci', 'Penandaan (color code dan tag ID)'];
+const INSP_RESULTS = ['Layak', 'Perlu Tindak Lanjut', 'Tidak Layak'];
+const OTHER_RESULTS = ['Selesai', 'Dalam Proses', 'Perlu Tindak Lanjut'];
+const STEPS = ['Pekerjaan', 'Unit', 'Hasil', 'Foto', 'Kirim'];
+const COLORS = { biru: '#1E5A8A', hijau: '#2E8B57', kuning: '#E8B800', merah: '#C0392B', oranye: '#E67E22', putih: '#F2F2F2', hitam: '#222', ungu: '#7B4FA0' };
+
+/* ---------- util ---------- */
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = d => d ? new Date(d + (String(d).length === 10 ? 'T00:00:00' : '')).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+const isProblem = r => r === 'Perlu Tindak Lanjut' || r === 'Tidak Layak';
+function toast(msg) { document.querySelector('.toast')?.remove(); const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+function newNumber() { const d = new Date(), p = n => String(n).padStart(2, '0'); return `LR-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`; }
+function blankDraft() {
+  return { id: null, number: newNumber(), work_type: 'Inspeksi', work_date: today(), location_id: '', location_detail: '', latitude: null, longitude: null,
+    units: [], photos: [], removedPhotos: [], summary: '', status: 'Draft', review_notes: '' };
+}
+function blankUnit(g) { return { gear_id: g.id, result: '', manual: false, notes: '', recommendation: '', checks: CHECKLIST.map(i => ({ item: i, result: null, notes: '' })) }; }
+const gearById = id => S.gears.find(g => g.id === id);
+const latestColor = g => (g.color_codes || []).slice().sort((a, b) => (b.end_date > a.end_date ? 1 : -1))[0];
+function colorStatus(c) { if (!c) return 'Belum ada color code'; const days = Math.round((new Date(c.end_date) - new Date(today())) / 864e5); return days < 0 ? 'Color code kedaluwarsa' : days <= 30 ? 'Color code segera berakhir' : 'Color code aktif'; }
+function suggestResult(u) {
+  const rs = u.checks.map(c => c.result);
+  if (rs.includes('Tidak Baik')) return 'Tidak Layak';
+  if (rs.includes('Perlu Perbaikan')) return 'Perlu Tindak Lanjut';
+  return rs.every(Boolean) ? 'Layak' : '';
+}
+function resultClass(r) { return r === 'Layak' || r === 'Selesai' ? 'ok' : r === 'Tidak Layak' ? 'bad' : r ? 'warn' : ''; }
+
+/* ---------- state ---------- */
+const S = { view: 'boot', user: null, profile: null, locations: [], gears: [], reports: [], filter: 'Semua', draft: null, step: 0, search: '', busy: false, loginErr: '', readonly: false };
+
+/* =====================================================================
+   LAPISAN DATA: Supabase  /  Demo
+   ===================================================================== */
+const DEMO_DB = { reports: [] };
+const DEMO_LOC = ['Area A', 'Area B', 'Area C', 'Jetty', 'Vessel'].map((n, i) => ({ id: i + 1, location_name: n }));
+const DEMO_GEARS = [
+  { id: 1, unit_number: 'WB-001', type: 'Waste Basket', name: 'Waste Basket 001', capacity: 5, year_procured: 2022, status: 'Aktif', location: { location_name: 'Area A' } },
+  { id: 2, unit_number: 'WB-002', type: 'Waste Basket', name: 'Waste Basket 002', capacity: 5, year_procured: 2022, status: 'Aktif', location: { location_name: 'Area B' } },
+  { id: 3, unit_number: 'RC-001', type: 'Rack Cradle', name: 'Rack Cradle 001', capacity: 10, year_procured: 2021, status: 'Maintenance', location: { location_name: 'Area C' } },
+  { id: 4, unit_number: 'LB-001', type: 'Long Basket', name: 'Long Basket 001', capacity: 8, year_procured: 2023, status: 'Aktif', location: { location_name: 'Area A' } }
+].map(g => ({ ...g, color_codes: g.id === 2 ? [] : [{ color: 'Biru', period: 'Semester 2', start_date: '2026-07-01', end_date: '2026-12-31' }] }));
+
+const API = DEMO ? {
+  async session() { return null; },
+  async login() { S.user = { id: 'demo-user' }; S.profile = { name: 'Inspector Dummy 1', role: 'inspector' }; },
+  async logout() { S.user = null; },
+  async master() { S.locations = DEMO_LOC; S.gears = DEMO_GEARS; },
+  async listReports() { return DEMO_DB.reports.slice().reverse().map(r => ({ id: r.id, number: r.number, work_type: r.work_type, work_date: r.work_date, status: r.status, review_notes: r.review_notes, location: DEMO_LOC.find(l => l.id == r.location_id)?.location_name, unit_count: r.units.length })); },
+  async loadReport(id) { return JSON.parse(JSON.stringify(DEMO_DB.reports.find(r => r.id === id), (k, v) => k === 'file' ? undefined : v)); },
+  async persist(d, submit) {
+    const copy = JSON.parse(JSON.stringify(d, (k, v) => (k === 'file' ? undefined : v)));
+    copy.photos.forEach((p, i) => { p.url = d.photos[i].url; });
+    copy.id = d.id || uuid(); copy.removedPhotos = [];
+    copy.status = submit ? 'Submitted' : 'Draft';
+    const i = DEMO_DB.reports.findIndex(r => r.id === copy.id);
+    if (i >= 0) DEMO_DB.reports[i] = copy; else DEMO_DB.reports.push(copy);
+    return copy.id;
+  }
+} : {
+  async session() {
+    const { data } = await sb.auth.getSession();
+    if (!data.session) return null;
+    S.user = data.session.user; await this.profile(); return S.user;
+  },
+  async profile() {
+    const { data } = await sb.from('profiles').select('name,role').eq('id', S.user.id).single();
+    S.profile = data || { name: S.user.email, role: 'inspector' };
+  },
+  async login(email, pass) {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    S.user = data.user; await this.profile();
+  },
+  async logout() { await sb.auth.signOut(); S.user = null; },
+  async master() {
+    const [l, g] = await Promise.all([
+      sb.from('locations').select('id,location_name').order('location_name'),
+      sb.from('lifting_gears').select('id,unit_number,type,name,capacity,year_procured,status,location:locations(location_name),color_codes(color,period,start_date,end_date)').order('unit_number')
+    ]);
+    if (l.error) throw l.error; if (g.error) throw g.error;
+    S.locations = l.data; S.gears = g.data;
+  },
+  async listReports() {
+    const { data, error } = await sb.from('work_reports')
+      .select('id,report_number,work_type,work_date,status,review_notes,location:locations(location_name),units:work_report_units(count)')
+      .eq('inspector_id', S.user.id).order('created_at', { ascending: false });
+    if (error) throw error;
+    return data.map(r => ({ id: r.id, number: r.report_number, work_type: r.work_type, work_date: r.work_date, status: r.status, review_notes: r.review_notes, location: r.location?.location_name, unit_count: r.units?.[0]?.count ?? 0 }));
+  },
+  async loadReport(id) {
+    const { data: r, error } = await sb.from('work_reports').select('*, units:work_report_units(*, checks:work_report_checks(*)), photos:work_report_photos(*)').eq('id', id).single();
+    if (error) throw error;
+    const paths = r.photos.map(p => p.storage_path);
+    let urls = {};
+    if (paths.length) { const { data } = await sb.storage.from('work-photos').createSignedUrls(paths, 3600); (data || []).forEach(x => { urls[x.path] = x.signedUrl; }); }
+    return {
+      id: r.id, number: r.report_number, work_type: r.work_type, work_date: r.work_date, location_id: r.location_id || '', location_detail: r.location_detail || '',
+      latitude: r.latitude, longitude: r.longitude, summary: r.summary || '', status: r.status, review_notes: r.review_notes || '', removedPhotos: [],
+      units: r.units.sort((a, b) => a.id - b.id).map(u => ({
+        gear_id: u.lifting_gear_id, result: u.result || '', manual: !!u.result, notes: u.notes || '', recommendation: u.recommendation || '',
+        checks: CHECKLIST.map(item => { const c = u.checks.find(x => x.item_checked === item); return { item, result: c?.result || null, notes: c?.notes || '' }; })
+      })),
+      photos: r.photos.map(p => ({ id: p.id, path: p.storage_path, url: urls[p.storage_path] || '', caption: p.caption || '', gear_id: p.lifting_gear_id }))
+    };
+  },
+  async persist(d, submit) {
+    const uid = S.user.id;
+    const row = { inspector_id: uid, work_type: d.work_type, work_date: d.work_date, location_id: d.location_id || null, location_detail: d.location_detail || null,
+      latitude: d.latitude, longitude: d.longitude, summary: d.summary || null, status: 'Draft' };
+    let rid = d.id;
+    if (rid) { const { error } = await sb.from('work_reports').update(row).eq('id', rid); if (error) throw error; }
+    else { const { data, error } = await sb.from('work_reports').insert({ ...row, report_number: d.number }).select('id').single(); if (error) throw error; rid = data.id; d.id = rid; }
+
+    let r = await sb.from('work_report_units').delete().eq('report_id', rid); if (r.error) throw r.error;
+    for (const u of d.units) {
+      const ins = await sb.from('work_report_units').insert({ report_id: rid, lifting_gear_id: u.gear_id, result: u.result || null, notes: u.notes || null, recommendation: u.recommendation || null }).select('id').single();
+      if (ins.error) throw ins.error;
+      const checks = d.work_type === 'Inspeksi' ? u.checks.map((c, i) => ({ unit_id: ins.data.id, sort: i, item_checked: c.item, result: c.result, notes: c.notes || null })).filter(c => c.result) : [];
+      if (checks.length) { const c = await sb.from('work_report_checks').insert(checks); if (c.error) throw c.error; }
+    }
+    for (const p of d.removedPhotos) { await sb.storage.from('work-photos').remove([p.path]); await sb.from('work_report_photos').delete().eq('id', p.id); }
+    d.removedPhotos = [];
+    for (const p of d.photos) {
+      if (p.id) { const u = await sb.from('work_report_photos').update({ caption: p.caption || null, lifting_gear_id: p.gear_id || null }).eq('id', p.id); if (u.error) throw u.error; continue; }
+      const path = `${uid}/${rid}/${uuid()}.jpg`;
+      const up = await sb.storage.from('work-photos').upload(path, p.file, { contentType: 'image/jpeg' });
+      if (up.error) throw up.error;
+      const ph = await sb.from('work_report_photos').insert({ report_id: rid, lifting_gear_id: p.gear_id || null, storage_path: path, caption: p.caption || null }).select('id').single();
+      if (ph.error) throw ph.error;
+      p.id = ph.data.id; p.path = path; p.file = null;
+    }
+    if (submit) { const s = await sb.from('work_reports').update({ status: 'Submitted', submitted_at: new Date().toISOString() }).eq('id', rid); if (s.error) throw s.error; }
+    return rid;
+  }
+};
+
+/* =====================================================================
+   VALIDASI
+   ===================================================================== */
+function validate(d) {
+  const errors = [], insp = d.work_type === 'Inspeksi';
+  if (!d.location_id) errors.push('Pilih lokasi pekerjaan (langkah Pekerjaan).');
+  if (!d.units.length) errors.push('Pilih minimal satu unit lifting gear (langkah Unit).');
+  d.units.forEach(u => {
+    const g = gearById(u.gear_id), no = g ? g.unit_number : 'Unit';
+    if (insp) { const n = u.checks.filter(c => !c.result).length; if (n) errors.push(`${no}: ${n} item belum diperiksa.`); }
+    else if (!u.notes.trim()) errors.push(`${no}: uraikan pekerjaan yang dilakukan.`);
+    if (!u.result) errors.push(`${no}: kesimpulan belum dipilih.`);
+    if (isProblem(u.result) && !u.recommendation.trim()) errors.push(`${no}: isi rekomendasi tindak lanjut.`);
+  });
+  if (d.units.some(u => isProblem(u.result)) && !d.photos.length) errors.push('Ada unit bermasalah: tambahkan minimal 1 foto temuan (langkah Foto).');
+  if (!d.summary.trim()) errors.push('Catatan hasil pekerjaan masih kosong.');
+  return errors;
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function render() {
+  const y = window.scrollY;
+  const v = S.view;
+  $app.innerHTML = v === 'login' ? vLogin() : v === 'home' ? vHome() : v === 'wizard' ? vWizard() : '<div class="loading">Memuat…</div>';
+  window.scrollTo(0, y);
+}
+
+function vLogin() {
+  return `<div class="hero" style="padding-bottom:28px"><h1>Lapor<br>Lapangan</h1><p>Pencatatan pekerjaan lifting gear</p></div>
+  <div class="pad">
+    ${DEMO ? `<div class="warnbox"><b>Mode demo.</b> Data contoh di memori dan hilang saat halaman dimuat ulang. Isi SUPABASE_URL dan SUPABASE_ANON_KEY di file ini untuk memakai database sungguhan.</div>
+      <button class="btn primary" data-act="demo-login">Masuk mode demo</button>` : `
+      <label class="f" for="em">Email</label><input id="em" type="email" autocomplete="username" inputmode="email" data-bind="login.email">
+      <label class="f" for="pw">Kata sandi</label><input id="pw" type="password" autocomplete="current-password" data-bind="login.pass">
+      ${S.loginErr ? `<div class="err">${esc(S.loginErr)}</div>` : ''}
+      <div style="margin-top:20px"><button class="btn primary" data-act="login" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Masuk…' : 'Masuk'}</button></div>`}
+  </div>`;
+}
+
+function vHome() {
+  const filters = ['Semua', 'Draft', 'Returned', 'Submitted', 'Approved'];
+  const label = { Semua: 'Semua', Draft: 'Draft', Returned: 'Dikembalikan', Submitted: 'Terkirim', Approved: 'Disetujui' };
+  const list = S.reports.filter(r => S.filter === 'Semua' || r.status === S.filter);
+  const nReturned = S.reports.filter(r => r.status === 'Returned').length;
+  return `<div class="hero"><div class="row"><div class="grow"><p style="margin:0">${esc(S.profile?.role === 'coordinator' ? 'Coordinator' : 'Inspector')}</p><h1>${esc(S.profile?.name || '')}</h1></div>
+      <button class="ibtn" data-act="logout">Keluar</button></div></div>
+    <div class="pad" style="padding-bottom:6px">
+      <button class="btn primary" data-act="new" style="min-height:62px;font-size:19px">Buat laporan baru</button>
+      ${nReturned ? `<div class="warnbox">${nReturned} laporan dikembalikan coordinator dan perlu diperbaiki.</div>` : ''}
+      ${DEMO ? '<div class="hint">Mode demo aktif.</div>' : ''}
+    </div>
+    <div class="filters">${filters.map(f => `<button class="${S.filter === f ? 'on' : ''}" data-act="filter" data-v="${f}">${label[f]}</button>`).join('')}</div>
+    ${list.length ? list.map(r => `<button class="rep" data-act="open" data-id="${r.id}">
+        <div class="row"><div class="no grow">${esc(r.number)}</div><span class="badge ${r.status}">${esc(({ Draft: 'Draft', Submitted: 'Terkirim', Returned: 'Dikembalikan', Approved: 'Disetujui' })[r.status])}</span></div>
+        <div class="sub">${esc(r.work_type)}, ${fmtDate(r.work_date)}</div>
+        <div class="sub">${esc(r.location || 'Lokasi belum dipilih')}, ${r.unit_count} unit</div>
+        ${r.status === 'Returned' && r.review_notes ? `<div class="note"><b>Catatan coordinator:</b> ${esc(r.review_notes)}</div>` : ''}
+      </button>`).join('') : `<div class="empty">${S.reports.length ? 'Tidak ada laporan dengan status ini.' : 'Belum ada laporan. Ketuk "Buat laporan baru" untuk memulai.'}</div>`}`;
+}
+
+function vWizard() {
+  const d = S.draft, s = S.step;
+  const title = S.readonly ? d.number : STEPS[s];
+  const body = [step1, step2, step3, step4, step5][s](d);
+  return `<div class="bar"><button class="ibtn" data-act="exit" aria-label="Kembali">&#8592; Beranda</button><h1 style="text-align:center">${esc(title)}</h1>
+      ${S.readonly ? '<span style="min-width:44px"></span>' : `<button class="ibtn" data-act="save">Simpan</button>`}</div>
+    ${S.readonly ? '' : `<div class="steps">${STEPS.map((n, i) => `<button class="${i === s ? 'on' : i < s ? 'done' : ''}" data-act="goto" data-v="${i}">${n}</button>`).join('')}</div>`}
+    <div class="pad">${d.review_notes && d.status !== 'Approved' ? `<div class="warnbox"><b>Catatan coordinator:</b> ${esc(d.review_notes)}</div>` : ''}${body}</div>
+    ${S.readonly ? '' : `<div class="dock">${s > 0 ? '<button class="btn back" data-act="prev">Kembali</button>' : ''}
+      ${s < 4 ? '<button class="btn primary" data-act="next">Lanjut</button>' : `<button class="btn primary" data-act="submit" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Mengirim…' : 'Kirim ke coordinator'}</button>`}</div>`}`;
+}
+
+/* ---- Langkah 1: pekerjaan & lokasi ---- */
+function step1(d) {
+  return `<div class="card">
+    <label class="f" style="margin-top:0">Jenis pekerjaan</label>
+    <div class="seg c3">${WORK_TYPES.map(t => `<button class="${d.work_type === t ? 'on neutral' : ''}" data-act="wtype" data-v="${t}">${t}</button>`).join('')}</div>
+    <label class="f" for="wd">Tanggal pekerjaan</label><input id="wd" type="date" value="${esc(d.work_date)}" data-bind="draft.work_date">
+  </div>
+  <div class="card">
+    <label class="f" for="loc" style="margin-top:0">Lokasi pekerjaan</label>
+    <select id="loc" data-bind="draft.location_id"><option value="">Pilih lokasi</option>${S.locations.map(l => `<option value="${l.id}" ${String(d.location_id) === String(l.id) ? 'selected' : ''}>${esc(l.location_name)}</option>`).join('')}</select>
+    ${d.work_type === 'Perpindahan Lokasi' ? '<p class="hint">Untuk perpindahan, isi lokasi tujuan unit.</p>' : ''}
+    <label class="f" for="ld">Detail lokasi (opsional)</label>
+    <input id="ld" value="${esc(d.location_detail)}" placeholder="Mis. dermaga sisi timur, rak 3" data-bind="draft.location_detail">
+    <div style="margin-top:12px"><button class="btn sm" data-act="gps">${d.latitude ? 'Perbarui koordinat GPS' : 'Ambil koordinat GPS'}</button></div>
+    ${d.latitude ? `<p class="hint">Koordinat: ${d.latitude.toFixed(5)}, ${d.longitude.toFixed(5)}</p>` : '<p class="hint">Koordinat membantu coordinator memverifikasi lokasi.</p>'}
+  </div>`;
+}
+
+/* ---- Langkah 2: identitas unit ---- */
+function plateHTML(g, sel, interactive) {
+  const c = latestColor(g), hex = COLORS[(c?.color || '').toLowerCase()] || '#9AA7AF';
+  const inner = `<span class="stripe"></span><span class="body">
+      <div class="no">${esc(g.unit_number)}</div><div class="nm">${esc(g.name)}</div>
+      <div class="meta"><span>${esc(g.type)}</span><span>${g.capacity ?? '-'} Ton</span><span>Tahun ${g.year_procured ?? '-'}</span><span>${esc(g.location?.location_name || 'Lokasi tidak diketahui')}</span></div>
+      <div class="cc">${c ? `Color code ${esc(c.color)}, s/d ${fmtDate(c.end_date)}. ${esc(colorStatus(c))}` : 'Belum ada color code'}${g.status !== 'Aktif' ? `. Status unit: ${esc(g.status)}` : ''}</div>
+    </span><span class="tick">&#10003;</span>`;
+  return interactive ? `<button class="plate ${sel ? 'sel' : ''}" style="--cc:${hex}" data-act="toggle-gear" data-id="${g.id}" aria-pressed="${!!sel}">${inner}</button>`
+    : `<div class="plate static" style="--cc:${hex}">${inner}</div>`;
+}
+function step2(d) {
+  const q = S.search.trim().toLowerCase();
+  const list = S.gears.filter(g => !q || (g.unit_number + ' ' + g.name + ' ' + g.type).toLowerCase().includes(q));
+  return `<input type="search" placeholder="Cari nomor unit atau nama" value="${esc(S.search)}" data-bind="search" data-live="1" aria-label="Cari unit">
+    <p class="hint" style="margin:8px 0 12px"><b>${d.units.length}</b> unit dipilih. Ketuk unit untuk memilih atau membatalkan.</p>
+    ${list.length ? list.map(g => plateHTML(g, d.units.some(u => u.gear_id === g.id), true)).join('') : '<div class="empty">Unit tidak ditemukan.</div>'}`;
+}
+
+/* ---- Langkah 3: hasil per unit ---- */
+function step3(d) {
+  if (!d.units.length) return '<div class="empty">Belum ada unit. Pilih unit di langkah Unit.</div>';
+  const insp = d.work_type === 'Inspeksi';
+  return d.units.map((u, ui) => {
+    const g = gearById(u.gear_id); if (!g) return '';
+    const results = insp ? INSP_RESULTS : OTHER_RESULTS;
+    return `<div class="card">${plateHTML(g, false, false)}
+      ${insp ? `<div class="row" style="margin-bottom:4px"><b class="grow">Checklist inspeksi</b><button class="btn sm" style="width:auto" data-act="allgood" data-u="${ui}">Semua baik</button></div>
+        ${u.checks.map((c, ci) => `<div class="chk"><div class="t">${esc(c.item)}</div>
+          <div class="seg c3">${[['Baik', 'ok'], ['Perlu Perbaikan', 'warn'], ['Tidak Baik', 'bad']].map(([r, k]) => `<button class="${c.result === r ? 'on ' + k : ''}" data-act="check" data-u="${ui}" data-c="${ci}" data-v="${r}">${r}</button>`).join('')}</div>
+          ${c.result && c.result !== 'Baik' ? `<input placeholder="Temuan pada ${esc(c.item.toLowerCase())}" value="${esc(c.notes)}" data-bind="draft.units.${ui}.checks.${ci}.notes">` : ''}</div>`).join('')}`
+        : `<label class="f" style="margin-top:0">Pekerjaan yang dilakukan</label><textarea placeholder="Uraikan pekerjaan pada unit ini" data-bind="draft.units.${ui}.notes">${esc(u.notes)}</textarea>`}
+      <label class="f">Kesimpulan</label>
+      <div class="seg c3">${results.map(r => `<button class="${u.result === r ? 'on ' + (resultClass(r) || 'neutral') : ''}" data-act="uresult" data-u="${ui}" data-v="${r}">${r}</button>`).join('')}</div>
+      ${insp && u.result && !u.manual ? '<p class="hint">Disarankan otomatis dari hasil checklist. Ketuk untuk mengubah.</p>' : ''}
+      ${isProblem(u.result) ? `<label class="f">Rekomendasi tindak lanjut</label><textarea placeholder="Mis. ganti shackle SC-002 sebelum digunakan" data-bind="draft.units.${ui}.recommendation">${esc(u.recommendation)}</textarea>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ---- Langkah 4: dokumentasi ---- */
+function step4(d) {
+  return `<label class="addph" for="file">+ Ambil atau pilih foto</label>
+    <input id="file" type="file" accept="image/*" capture="environment" multiple hidden>
+    <p class="hint" style="margin:8px 0 14px">Foto dikompres otomatis sebelum diunggah. Wajib ada bila ada unit bermasalah.</p>
+    ${d.photos.length ? `<div class="photos">${d.photos.map((p, i) => `<div class="ph"><img src="${esc(p.url)}" alt="Foto ${i + 1}">
+      <div class="in"><input placeholder="Keterangan foto" value="${esc(p.caption)}" data-bind="draft.photos.${i}.caption">
+        <select data-bind="draft.photos.${i}.gear_id" aria-label="Unit terkait"><option value="">Foto umum (semua unit)</option>${d.units.map(u => { const g = gearById(u.gear_id); return `<option value="${u.gear_id}" ${String(p.gear_id) === String(u.gear_id) ? 'selected' : ''}>${esc(g?.unit_number)}</option>`; }).join('')}</select>
+        <button class="btn sm" data-act="rm-photo" data-i="${i}">Hapus foto</button></div></div>`).join('')}</div>` : '<div class="empty">Belum ada foto.</div>'}`;
+}
+
+/* ---- Langkah 5: ringkasan & kirim ---- */
+function summaryHTML(d) {
+  const loc = S.locations.find(l => String(l.id) === String(d.location_id));
+  return `<div class="card"><dl class="kv" style="margin:0">
+      <dt>No. laporan</dt><dd>${esc(d.number)}</dd><dt>Pekerjaan</dt><dd>${esc(d.work_type)}</dd><dt>Tanggal</dt><dd>${fmtDate(d.work_date)}</dd>
+      <dt>Lokasi</dt><dd>${esc(loc?.location_name || '-')}${d.location_detail ? ', ' + esc(d.location_detail) : ''}</dd>
+      <dt>Foto</dt><dd>${d.photos.length}</dd></dl></div>
+    ${d.units.map(u => { const g = gearById(u.gear_id); const bad = u.checks.filter(c => c.result && c.result !== 'Baik');
+      return `<div class="card"><div class="row"><b class="grow" style="font-family:var(--fc);font-size:20px">${esc(g?.unit_number)}</b><span class="badge" style="${u.result ? '' : ''}">${esc(u.result || 'Belum ada kesimpulan')}</span></div>
+        <div class="hint">${esc(g?.name)}</div>
+        ${bad.length ? `<ul style="margin:8px 0 0;padding-left:20px">${bad.map(c => `<li>${esc(c.item)}: ${esc(c.result)}${c.notes ? ' (' + esc(c.notes) + ')' : ''}</li>`).join('')}</ul>` : ''}
+        ${u.notes ? `<p style="margin:8px 0 0">${esc(u.notes)}</p>` : ''}
+        ${u.recommendation ? `<p style="margin:8px 0 0"><b>Rekomendasi:</b> ${esc(u.recommendation)}</p>` : ''}</div>`; }).join('')}
+    ${d.photos.length ? `<div class="photos" style="margin-bottom:12px">${d.photos.map(p => `<div class="ph"><img src="${esc(p.url)}" alt="">${p.caption ? `<div class="in">${esc(p.caption)}</div>` : ''}</div>`).join('')}</div>` : ''}
+    ${S.readonly ? `<div class="card"><b>Catatan hasil pekerjaan</b><p style="margin:6px 0 0;white-space:pre-wrap">${esc(d.summary)}</p></div>` : ''}`;
+}
+function step5(d) {
+  const errors = validate(d);
+  return `<div class="card"><label class="f" for="sm" style="margin-top:0">Catatan hasil pekerjaan</label>
+      <textarea id="sm" style="min-height:130px" placeholder="Ringkas apa yang dikerjakan, kondisi akhir, dan hal yang perlu diketahui coordinator" data-bind="draft.summary">${esc(d.summary)}</textarea></div>
+    ${errors.length ? `<div class="err"><b>Lengkapi dulu sebelum mengirim:</b><ul>${errors.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>` : '<div class="okbox">Laporan lengkap dan siap dikirim.</div>'}
+    ${summaryHTML({ ...d, summary: '' })}
+    <button class="btn" data-act="save">Simpan sebagai draft</button>`;
+}
+
+/* =====================================================================
+   AKSI & EVENT
+   ===================================================================== */
+function setPath(path, val) {
+  const parts = path.split('.'); let o = parts[0] === 'draft' ? S.draft : parts[0] === 'login' ? (S.login = S.login || {}) : S;
+  const rest = parts[0] === 'draft' || parts[0] === 'login' ? parts.slice(1) : parts;
+  for (let i = 0; i < rest.length - 1; i++) o = o[rest[i]];
+  o[rest[rest.length - 1]] = val;
+}
+function wip() { try { if (S.draft && !S.draft.id) localStorage.setItem('lg_wip', JSON.stringify({ ...S.draft, photos: [], removedPhotos: [] })); } catch (e) { } }
+function clearWip() { try { localStorage.removeItem('lg_wip'); } catch (e) { } }
+
+async function refreshReports() { S.reports = await API.listReports(); }
+async function go(view) { S.view = view; render(); window.scrollTo(0, 0); }
+
+async function doSave(submit) {
+  if (S.busy) return; S.busy = true; render();
+  try {
+    S.draft.photos.forEach(p => { if (p.gear_id === '') p.gear_id = null; });
+    await API.persist(S.draft, submit);
+    clearWip();
+    await refreshReports();
+    S.busy = false;
+    toast(submit ? 'Laporan terkirim ke coordinator' : 'Draft tersimpan');
+    if (submit) { S.draft = null; await go('home'); } else render();
+  } catch (e) {
+    S.busy = false; render(); toast('Gagal menyimpan: ' + (e.message || e));
+  }
+}
+
+const ACT = {
+  async 'demo-login'() { await API.login(); await API.master(); await refreshReports(); go('home'); },
+  async login() {
+    const L = S.login || {}; S.busy = true; S.loginErr = ''; render();
+    try { await API.login((L.email || '').trim(), L.pass || ''); await API.master(); await refreshReports(); S.busy = false; go('home'); }
+    catch (e) { S.busy = false; S.loginErr = 'Email atau kata sandi salah, atau koneksi bermasalah.'; render(); }
+  },
+  async logout() { await API.logout(); S.reports = []; go('login'); },
+  filter(el) { S.filter = el.dataset.v; render(); },
+  new() {
+    S.readonly = false; S.step = 0; S.search = '';
+    let w = null; try { w = JSON.parse(localStorage.getItem('lg_wip') || 'null'); } catch (e) { }
+    S.draft = (w && confirm('Ada isian laporan yang belum tersimpan. Lanjutkan isian itu?')) ? w : blankDraft();
+    if (!w || S.draft !== w) clearWip();
+    go('wizard');
+  },
+  async open(el) {
+    try {
+      const d = await API.loadReport(el.dataset.id);
+      S.draft = d; S.step = 0; S.search = ''; S.readonly = !(d.status === 'Draft' || d.status === 'Returned');
+      go('wizard');
+    } catch (e) { toast('Gagal membuka laporan'); }
+  },
+  async exit() {
+    if (!S.readonly && S.draft && !S.draft.id && !confirm('Keluar tanpa menyimpan? Isian tetap disimpan sementara di perangkat ini.')) return;
+    S.draft = null; await refreshReports().catch(() => { }); go('home');
+  },
+  next() { if (S.step < 4) { S.step++; render(); window.scrollTo(0, 0); } },
+  prev() { if (S.step > 0) { S.step--; render(); window.scrollTo(0, 0); } },
+  goto(el) { S.step = +el.dataset.v; render(); window.scrollTo(0, 0); },
+  save() { doSave(false); },
+  async submit() {
+    const errs = validate(S.draft);
+    if (errs.length) { toast('Masih ada isian yang belum lengkap'); window.scrollTo(0, 0); return; }
+    if (!confirm('Kirim laporan ini ke coordinator? Setelah dikirim, laporan tidak bisa diubah kecuali dikembalikan.')) return;
+    doSave(true);
+  },
+  wtype(el) { S.draft.work_type = el.dataset.v; S.draft.units.forEach(u => { u.result = ''; u.manual = false; }); wip(); render(); },
+  gps() {
+    if (!navigator.geolocation) return toast('Perangkat tidak mendukung GPS');
+    toast('Mencari lokasi…');
+    navigator.geolocation.getCurrentPosition(p => { S.draft.latitude = p.coords.latitude; S.draft.longitude = p.coords.longitude; wip(); render(); toast('Koordinat tersimpan'); },
+      () => toast('Gagal mengambil lokasi. Pastikan izin lokasi aktif.'), { enableHighAccuracy: true, timeout: 15000 });
+  },
+  'toggle-gear'(el) {
+    const id = +el.dataset.id, i = S.draft.units.findIndex(u => u.gear_id === id);
+    if (i >= 0) S.draft.units.splice(i, 1); else S.draft.units.push(blankUnit(gearById(id)));
+    wip(); render();
+  },
+  check(el) {
+    const u = S.draft.units[+el.dataset.u], c = u.checks[+el.dataset.c];
+    c.result = el.dataset.v; if (c.result === 'Baik') c.notes = '';
+    if (!u.manual) u.result = suggestResult(u);
+    wip(); render();
+  },
+  allgood(el) {
+    const u = S.draft.units[+el.dataset.u]; u.checks.forEach(c => { c.result = 'Baik'; c.notes = ''; });
+    if (!u.manual) u.result = suggestResult(u);
+    wip(); render();
+  },
+  uresult(el) { const u = S.draft.units[+el.dataset.u]; u.result = el.dataset.v; u.manual = true; if (!isProblem(u.result)) u.recommendation = ''; wip(); render(); },
+  'rm-photo'(el) {
+    const i = +el.dataset.i, p = S.draft.photos[i];
+    if (p.id) S.draft.removedPhotos.push({ id: p.id, path: p.path }); else if (p.url?.startsWith('blob:')) URL.revokeObjectURL(p.url);
+    S.draft.photos.splice(i, 1); render();
+  }
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const fn = ACT[el.dataset.act]; if (fn) fn(el);
+});
+document.addEventListener('input', e => {
+  const el = e.target; if (!el.dataset.bind) return;
+  setPath(el.dataset.bind, el.value);
+  if (el.dataset.bind.startsWith('draft')) wip();
+  if (el.dataset.live) { // pencarian: render ulang tapi pertahankan fokus
+    const pos = el.selectionStart; render(); const n = document.querySelector('[data-live]'); if (n) { n.focus(); n.setSelectionRange(pos, pos); }
+  }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.id === 'file') { addPhotos(el.files); el.value = ''; return; }
+  if (el.dataset.bind) { setPath(el.dataset.bind, el.value); if (el.dataset.bind.startsWith('draft')) wip(); }
+});
+
+/* foto: kompres ke maks 1600px JPEG sebelum diunggah */
+function compress(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error('Gagal memproses foto')), 'image/jpeg', 0.8);
+    };
+    img.onerror = () => rej(new Error('File bukan gambar yang valid'));
+    img.src = url;
+  });
+}
+async function addPhotos(files) {
+  if (!files.length) return; toast('Memproses foto…');
+  try {
+    for (const f of files) { const b = await compress(f); S.draft.photos.push({ id: null, path: null, file: b, url: URL.createObjectURL(b), caption: '', gear_id: null }); }
+    render(); toast(files.length + ' foto ditambahkan');
+  } catch (e) { toast(e.message); }
+}
+
+/* ---------- start ---------- */
+(async function init() {
+  try {
+    if (!DEMO && await API.session()) { await API.master(); await refreshReports(); S.view = 'home'; }
+    else S.view = 'login';
+  } catch (e) { S.view = 'login'; S.loginErr = 'Tidak dapat terhubung ke Supabase. Periksa URL, key, dan koneksi.'; }
+  render();
+})();
+</script>
+</body>
+</html>
